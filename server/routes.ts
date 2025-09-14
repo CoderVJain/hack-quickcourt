@@ -59,8 +59,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      if (user.isActive !== true) {
-        console.log("User is not active, isActive value:", user.isActive);
+      // Robust boolean normalization for isActive  
+      const toBool = (v: any) => v === true || v === 'true' || v === 't' || v === 1 || v === '1';
+      const isActive = toBool(user.isActive ?? user.is_active ?? user.isactive);
+      
+      if (!isActive) {
+        console.log("User is not active, raw value:", user.isActive, "normalized:", isActive);
         return res.status(401).json({ message: "Account is not active" });
       }
       

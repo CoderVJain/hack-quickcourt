@@ -108,7 +108,7 @@ export class DatabaseStorage implements IStorage {
         last_name,
         role,
         phone_number,
-        is_active,
+        is_active AS "isActive",
         created_at,
         updated_at
       FROM crm_users 
@@ -118,8 +118,10 @@ export class DatabaseStorage implements IStorage {
     
     if (result.rows[0]) {
       const user = result.rows[0];
-      // Convert PostgreSQL 't'/'f' to boolean
-      user.isActive = user.is_active === 't' || user.is_active === true;
+      // Robust boolean conversion with fallback for different driver formats
+      const toBool = (v: any) => v === true || v === 'true' || v === 't' || v === 1 || v === '1';
+      const raw = (user as any).isActive ?? (user as any).isactive ?? (user as any).is_active;
+      (user as any).isActive = toBool(raw);
       return user;
     }
     
@@ -137,7 +139,7 @@ export class DatabaseStorage implements IStorage {
         last_name,
         role,
         phone_number,
-        is_active,
+        is_active AS "isActive",
         created_at,
         updated_at
       FROM crm_users 
@@ -147,9 +149,11 @@ export class DatabaseStorage implements IStorage {
     
     if (result.rows[0]) {
       const user = result.rows[0];
-      // Convert PostgreSQL 't'/'f' to boolean
-      user.isActive = user.is_active === 't' || user.is_active === true;
-      console.log("CRM user found:", { email: user.email, role: user.role });
+      // Robust boolean conversion with fallback for different driver formats
+      const toBool = (v: any) => v === true || v === 'true' || v === 't' || v === 1 || v === '1';
+      const raw = (user as any).isActive ?? (user as any).isactive ?? (user as any).is_active;
+      (user as any).isActive = toBool(raw);
+      console.log("CRM user found:", { email: user.email, role: user.role, rawValue: raw, converted: user.isActive });
       return user;
     }
     
@@ -162,9 +166,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser & { referralCode?: string }): Promise<User> {
+    const { referralCode, password, ...dbUser } = insertUser as any;
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(dbUser)
       .returning();
     return user;
   }
@@ -184,16 +189,16 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`getFacilities called: isCrmRequest=${isCrmRequest}, filters=${JSON.stringify(filters)}`);
       
-      let query = db.select().from(facilities);
+      const result = await (isCrmRequest ? 
+        db.select().from(facilities) : 
+        db.select().from(facilities).where(eq(facilities.status, "approved"))
+      );
       
       if (!isCrmRequest) {
         console.log('Filtering to approved only (public request)');
-        query = query.where(eq(facilities.status, "approved"));
       } else {
         console.log('Showing ALL facilities (CRM request)');
       }
-      
-      const result = await query;
       console.log(`Query returned ${result.length} facilities`);
       
       const facilitiesWithCourts = await Promise.all(
@@ -824,13 +829,13 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select({
         sport: courts.sportType,
-        count: count(courts.id)
+        count: sql<number>`count(${courts.id})`
       })
       .from(courts)
       .innerJoin(facilities, eq(courts.facilityId, facilities.id))
       .where(eq(facilities.status, "approved"))
       .groupBy(courts.sportType)
-      .orderBy(desc(count(courts.id)));
+      .orderBy(desc(sql<number>`count(${courts.id})`));
 
     return result;
   }
@@ -1227,9 +1232,9 @@ export class DatabaseStorage implements IStorage {
         ORDER BY c.name ASC
       `);
       
-      return result.rows.map(row => ({
+      return result.rows.map((row: any) => ({
         ...row,
-        ownerId: row.owner_id, // FIXED: Add camelCase ownerId
+        ownerId: row.owner_id,
         ownerName: row.owner_name,
         facilitiesCount: Number(row.facilities_count)
       }));
