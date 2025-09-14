@@ -1,4 +1,4 @@
-
+demo - https://drive.google.com/drive/folders/1SnRhPrHVnXDZhoD-dwI38BzgxC1YIcq7?usp=sharing
 As sports enthusiasts, we’ve all faced the same frustration. You want to play a game of badminton, but finding a court feels like a sport in itself. The current options are fragmented, inefficient, and frankly, they suck the fun out of it. We are here to change that. We are Quick Court, and our tagline is simple: Play, Connect, Conquer.
 We’ve identified three major problems in the sports booking space. First, the lack of a centralized platform. You have to hunt for venues on different apps and websites. Second, the community is broken. Finding friends or new players to fill a team is a manual, often frustrating process. And finally, the booking experience is incomplete. After you pay, you're left to fend for yourself—organizing payment splits, getting confirmations, and handling logistics.  
 
