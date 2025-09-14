@@ -6,24 +6,11 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { insertUserSchema, insertFacilitySchema, insertBookingSchema, insertReviewSchema, insertCompanySchema, courts, facilities } from "@shared/schema";
 import { z } from "zod";
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
-import Stripe from "stripe";
-
-// Database connection
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
+import { db } from "./db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this";
 
-// Initialize Stripe (only if key is provided)
-let stripe: Stripe | null = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-11-20.acacia",
-  });
-}
 
 // Middleware to verify JWT token
 const authenticateToken = (req: any, res: Response, next: any) => {
